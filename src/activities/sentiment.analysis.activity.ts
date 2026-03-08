@@ -3,9 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { ChatOpenAI } from '@langchain/openai';
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import { z } from 'zod';
-import { SmsActivity } from './sms.activity';
-
-// Import your existing SMS service to reuse logic
 
 // 1. Define the Graph State
 // This is the data that moves between nodes
@@ -19,13 +16,10 @@ const GraphState = Annotation.Root({
 export class SentimentActivity {
   private readonly model: ChatOpenAI;
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly smsService: SmsActivity, // Reuse your existing Twilio logic
-  ) {
+  constructor(private readonly configService: ConfigService) {
     this.model = new ChatOpenAI({
       model: 'gpt-4o',
-      apiKey: this.configService.get('OPENAI_API_KEY'),
+      apiKey: this.configService.get('OPENAI_API_KEY') || 'dummy',
       temperature: 0,
     });
   }
@@ -54,17 +48,13 @@ export class SentimentActivity {
       return { sentiment: response.sentiment };
     };
 
-    // --- NODE 2: SMS SENDER ---
+    // --- NODE 2: MESSAGE SENDER ---
     const smsNode = async (state: typeof GraphState.State) => {
-      console.log(`--- Sending SMS (${state.sentiment}) ---`);
+      console.log(`--- Mock Sending SMS (${state.sentiment}) ---`);
 
-      const message = `Analysis Result: Your query is ${state.sentiment}.`;
-
-      // Use your existing SMS Activity logic
-      await this.smsService.sendSmsActivity({
-        to: state.phoneNumber,
-        body: message,
-      });
+      console.log(
+        `Analysis Result: Your query is ${state.sentiment}. (SMS sent to ${state.phoneNumber})`,
+      );
 
       // We don't need to return anything new to state, just side effect
       return {};
@@ -94,10 +84,14 @@ export class SentimentActivity {
     // --- COMPILE & RUN ---
     const app = workflow.compile();
 
-    await app.invoke({
-      query: args.query,
-      phoneNumber: args.phoneNumber,
-    });
+    try {
+      await app.invoke({
+        query: args.query,
+        phoneNumber: args.phoneNumber,
+      });
+    } catch (e) {
+      console.log('Error invoking sentiment graph', e);
+    }
 
     return { success: true, finalSentiment: 'PROCESSED' };
   }

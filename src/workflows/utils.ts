@@ -1,6 +1,6 @@
 import { WorkflowState } from 'src/models/workflow.state.model';
 
-export function resolveStateValue(state: WorkflowState, path: string): any {
+export function resolveStateValue(state: WorkflowState, path: string): unknown {
   if (!path || typeof path !== 'string') return undefined;
 
   const parts = path.split('.');
@@ -12,10 +12,10 @@ export function resolveStateValue(state: WorkflowState, path: string): any {
     if (matchingKey) rootKey = matchingKey;
   }
 
-  let current: any = state[rootKey];
+  let current: unknown = state[rootKey];
   for (let i = 1; i < parts.length; i++) {
     if (current === undefined || current === null) return undefined;
-    current = current[parts[i]];
+    current = (current as Record<string, unknown>)[parts[i]];
   }
   return current;
 }
@@ -25,18 +25,20 @@ export function resolveTemplate(
   state: WorkflowState,
 ): string {
   if (!template || typeof template !== 'string') return template;
-  return template.replace(/\{\{(.*?)\}\}/g, (_, match) => {
+  return template.replace(/\{\{(.*?)\}\}/g, (_, match: string) => {
     const val = resolveStateValue(state, match.trim());
-    return val !== undefined ? String(val) : '';
+    if (val === undefined || val === null) return '';
+    if (typeof val === 'object') return JSON.stringify(val);
+    return String(val);
   });
 }
 
 // Helper to resolve all params in a config object
 export function resolveParams(
-  params: Record<string, any>,
+  params: Record<string, unknown>,
   state: WorkflowState,
-): Record<string, any> {
-  const resolved: Record<string, any> = {};
+): Record<string, unknown> {
+  const resolved: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(params)) {
     resolved[key] =
       typeof value === 'string' ? resolveTemplate(value, state) : value;

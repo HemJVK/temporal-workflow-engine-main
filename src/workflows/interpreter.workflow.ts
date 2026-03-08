@@ -59,7 +59,7 @@ export async function InterpreterWorkflow(payload: WorkflowPayload) {
   //   );
   // }
   let currentNodeId: string | null = payload.startAt;
-  let voiceCallData: any = null;
+  let voiceCallData: { nodeId: string; data: unknown } | null = null;
 
   // Initialize State (inject initialState if coming from a parent Loop)
   const workflowState: WorkflowState = payload.initialState || {};
@@ -79,10 +79,10 @@ export async function InterpreterWorkflow(payload: WorkflowPayload) {
     console.log('[Interpreter] Received Webhook Signal:', data);
     webhookData = data;
   });
-  setHandler(voiceCallbackSignal, (payload) => {
+  setHandler(voiceCallbackSignal, (payload: unknown) => {
     // Payload: { nodeId: '...', data: { ... } }
     // We store it so the specific node can read it
-    voiceCallData = payload;
+    voiceCallData = payload as { nodeId: string; data: unknown };
   });
 
   // --- THE EVENT LOOP ---
@@ -134,11 +134,13 @@ export async function InterpreterWorkflow(payload: WorkflowPayload) {
           // 3. Resume and Save Data
           console.log(
             '[Interpreter] Call Finished! Data received:',
-            voiceCallData.data,
+            (voiceCallData as any)?.data,
           );
 
           // Save the answers (e.g. { budget: "10k", interest: "high" })
-          workflowState[node.id] = voiceCallData.data;
+          if (voiceCallData && (voiceCallData as any).data) {
+            workflowState[node.id] = (voiceCallData as any).data;
+          }
 
           // Reset for next call
           voiceCallData = null;
@@ -210,10 +212,10 @@ export async function InterpreterWorkflow(payload: WorkflowPayload) {
       } else if (node.type === 'trigger_end') {
         console.log('End Node reached. Calculating final output...');
 
-        let finalOutput = workflowState;
+        let finalOutput: unknown = workflowState;
 
         // 1. If user defined a specific output template
-        if (node.params.output) {
+        if (node.params?.output) {
           // Resolve templates inside the output string
           const resolvedOutput = resolveTemplate(
             node.params.output,
@@ -227,7 +229,7 @@ export async function InterpreterWorkflow(payload: WorkflowPayload) {
             finalOutput = JSON.parse(resolvedOutput);
           } catch {
             // Otherwise return as simple string
-            finalOutput = resolvedOutput as any;
+            finalOutput = resolvedOutput;
           }
         }
 
@@ -319,18 +321,24 @@ async function determineNextNode(
     console.log(`[Router] Evaluating ${variable}. Found value: ${actualValue}`);
 
     if (routes && Array.isArray(routes)) {
-      for (const route of routes) {
-        console.log(`[Router] Checking Rule: ${route.operator} ${route.value}`);
+      for (const route of routes as {
+        operator: string;
+        value: unknown;
+        id: string;
+      }[]) {
+        console.log(
+          `[Router] Checking Rule: ${route.operator} ${String(route.value)}`,
+        );
         const match = compareValues(actualValue, route.operator, route.value);
         console.log(`[Router] Match Result: ${match}`);
         if (match) {
           console.log(
-            `[Router] Matched Rule: ${route.operator} ${route.value}, ${actualValue}`,
+            `[Router] Matched Rule: ${route.operator} ${String(route.value)}, ${String(actualValue)}`,
           );
           return node.branches?.[route.id] || null;
         } else {
           console.log(
-            `[Router] Did not match Rule: ${route.operator} ${route.value}, ${actualValue}`,
+            `[Router] Did not match Rule: ${route.operator} ${String(route.value)}, ${String(actualValue)}`,
           );
         }
       }
@@ -444,11 +452,14 @@ function resolveStateValue(state: WorkflowState, path: string): unknown {
     }
   }
 
-  // 3. Deep Traverse
-  let current: any = state[rootKey];
+  let current: unknown = state[rootKey];
   for (let i = 1; i < parts.length; i++) {
     if (current === undefined || current === null) return undefined;
-    current = current[parts[i]];
+    if (typeof current === 'object') {
+      current = (current as Record<string, unknown>)[parts[i]];
+    } else {
+      return undefined;
+    }
   }
 
   return current;
@@ -460,7 +471,7 @@ function resolveStateValue(state: WorkflowState, path: string): unknown {
  * 2. Checks Global State
  * 3. Fallback: Checks First Row of a DB Result
  */
-function findRouterValue(variable: string, state: WorkflowState): any {
+function findRouterValue(variable: string, state: WorkflowState): unknown {
   // 1. Check Loop Context
   if (state['loopItem']) {
     const loopVal = resolveStateValue(
@@ -477,12 +488,17 @@ function findRouterValue(variable: string, state: WorkflowState): any {
   if (globalVal !== undefined) return globalVal;
 
   // 3. Fallback: Check DB Rows (Auto-discovery)
-  const dbKey = Object.keys(state).find((k) => (state[k] as any)?.rows);
+  const dbKey = Object.keys(state).find(
+    (k) =>
+      state[k] &&
+      typeof state[k] === 'object' &&
+      'rows' in (state[k] as Record<string, unknown>),
+  );
   if (dbKey) {
-    const rows = (state[dbKey] as any).rows;
+    const rows = (state[dbKey] as Record<string, unknown>).rows;
     console.log(`[Router] Fallback DB Rows for '${variable}':`, rows);
-    if (Array.isArray(rows) && rows[0]) {
-      return rows[0][variable];
+    if (Array.isArray(rows) && rows.length > 0 && String(variable) in rows[0]) {
+      return (rows[0] as Record<string, unknown>)[variable];
     }
   }
 
@@ -492,9 +508,13 @@ function findRouterValue(variable: string, state: WorkflowState): any {
 /**
  * Logic Comparison Helper
  */
-function compareValues(actual: any, operator: string, target: any): boolean {
+function compareValues(
+  actual: unknown,
+  operator: string,
+  target: unknown,
+): boolean {
   console.log(
-    `[Compare] Comparing actual: ${typeof actual}('${actual}') vs target: ${typeof target}('${target}') with '${operator}'`,
+    `[Compare] Comparing actual: ${typeof actual}('${String(actual)}') vs target: ${typeof target}('${String(target)}') with '${operator}'`,
   );
 
   // 1. Normalize Booleans
@@ -543,16 +563,16 @@ function compareValues(actual: any, operator: string, target: any): boolean {
       match = actual != target;
       break;
     case '>':
-      match = actual > target;
+      match = (actual as number) > (target as number);
       break;
     case '<':
-      match = actual < target;
+      match = (actual as number) < (target as number);
       break;
     case '>=':
-      match = actual >= target;
+      match = (actual as number) >= (target as number);
       break;
     case '<=':
-      match = actual <= target;
+      match = (actual as number) <= (target as number);
       break;
     case 'contains':
       match = String(actual).includes(String(target));

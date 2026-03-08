@@ -13,13 +13,13 @@ export class ResearcherTool implements IWorkflowTool {
     console.log('Running Research Subgraph Tool...');
 
     // 1. Resolve Topic
-    const topic = resolveTemplate(node.params.topic, state);
+    const topic = resolveTemplate(node.params.topic as string, state);
 
     if (!topic) throw new Error('Research topic is missing');
 
     // 2. Call the Activity (which runs the LangGraph)
     const result = await activities.runResearchSubgraph({ topic });
 
-    return result;
+    return result as unknown;
   }
 }

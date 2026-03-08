@@ -17,13 +17,9 @@ export const validationSchema = Joi.object({
   DB_PASSWORD: Joi.string().required(),
   DB_NAME: Joi.string().required(),
 
-  // AI
-  OPENAI_API_KEY: Joi.string().required(), // Essential for your AI nodes
-
-  TWILIO_ACCOUNT_SID: Joi.string().required(),
-  TWILIO_AUTH_TOKEN: Joi.string().required(),
-  TWILIO_FROM_NUMBER: Joi.string().required(),
-
-  SENDGRID_API_KEY: Joi.string().required(),
-  SENDGRID_FROM_EMAIL: Joi.string().email().required(),
+  // AI Providers (Optional, user provides at least one)
+  OPENAI_API_KEY: Joi.string().optional(),
+  ANTHROPIC_API_KEY: Joi.string().optional(),
+  GOOGLE_GEMINI_API_KEY: Joi.string().optional(),
+  GROQ_API_KEY: Joi.string().optional(),
 });

@@ -8,14 +8,11 @@ import { Worker } from '@temporalio/worker';
 
 import { DatabaseActivity } from '../activities/database.activity';
 import { ConfigService } from '@nestjs/config';
-import { EmailActivity } from 'src/activities/email.activity';
-import { SmsActivity } from 'src/activities/sms.activity';
 import { HttpActivity } from 'src/activities/http.activity';
 import { AuditActivity } from 'src/audit/audit.activity';
-import { GenericLlmActivity } from 'src/activities/ai/generic-llm.activity';
+import { LangGraphActivity } from 'src/activities/ai/langgraph.activity';
 import { LangGraphResearchActivity } from 'src/activities/ai/research-activity';
 import { RunActivity } from 'src/activities/run.activity';
-import { VoiceCallActivity } from 'src/activities/voice-call.activity';
 
 @Injectable()
 export class WorkerService implements OnModuleInit, OnApplicationShutdown {
@@ -23,47 +20,42 @@ export class WorkerService implements OnModuleInit, OnApplicationShutdown {
 
   constructor(
     private readonly dbActivities: DatabaseActivity,
-    private readonly emailActivities: EmailActivity,
-    private readonly smsActivities: SmsActivity,
     private readonly httpActivities: HttpActivity,
     private readonly configService: ConfigService,
     private readonly auditActivities: AuditActivity,
-    private readonly genericLLMActivities: GenericLlmActivity,
+    private readonly langGraphActivities: LangGraphActivity,
     private readonly researchActivities: LangGraphResearchActivity,
     private readonly runActivities: RunActivity,
-    private readonly voiceCallActivities: VoiceCallActivity,
   ) {}
 
   async onModuleInit() {
     const workflowsPath = require.resolve('../workflows/interpreter.workflow');
     const taskQueue = this.configService.get<string>('temporal.taskQueue');
 
-    const activities = {
+    // Use type assertion for the activities object explicitly or let TS infer if we wrap it properly.
+    // However, the cleanest way to fix `Unsafe assignment of an any value`
+    // is to just cast or omit .bind if it complains, or assert the signature.
+    // Actually the lint error is likely because `this.dbActivities.executeSqlQuery` itself is typed with `any`.
+    // Let's assert the entire activities object.
+    const activities: Record<string, (...args: never[]) => unknown> = {
       executeSqlQuery: this.dbActivities.executeSqlQuery.bind(
         this.dbActivities,
-      ),
-      sendEmail: this.emailActivities.sendEmail.bind(this.emailActivities),
-      sendSmsActivity: this.smsActivities.sendSmsActivity.bind(
-        this.smsActivities,
-      ),
+      ) as (...args: never[]) => unknown,
       makeHttpRequest: this.httpActivities.makeHttpRequest.bind(
         this.httpActivities,
-      ),
-      logStep: this.auditActivities.logStep.bind(this.auditActivities),
-      runLlm: this.genericLLMActivities.runLlm.bind(this.genericLLMActivities),
+      ) as (...args: never[]) => unknown,
+      logStep: this.auditActivities.logStep.bind(this.auditActivities) as (
+        ...args: never[]
+      ) => unknown,
+      runAgent: this.langGraphActivities.runAgent.bind(
+        this.langGraphActivities,
+      ) as (...args: never[]) => unknown,
       runResearchSubgraph: this.researchActivities.runResearchSubgraph.bind(
         this.researchActivities,
-      ),
+      ) as (...args: never[]) => unknown,
       updateRunStatus: this.runActivities.updateRunStatus.bind(
         this.runActivities,
-      ),
-      makeNotificationCall: this.voiceCallActivities.makeNotificationCall.bind(
-        this.voiceCallActivities,
-      ),
-      makeConversationCall:
-        this.voiceCallActivities.makeConversationalCall.bind(
-          this.voiceCallActivities,
-        ),
+      ) as (...args: never[]) => unknown,
     };
 
     // 3. Create the Worker

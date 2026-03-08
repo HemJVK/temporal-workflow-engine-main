@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { ChatAnthropic } from '@langchain/anthropic';
+import { ChatGroq } from '@langchain/groq';
 import { z } from 'zod';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import {
@@ -11,10 +13,8 @@ import {
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 
 import { DatabaseActivity } from '../database.activity';
-import { SmsActivity } from '../sms.activity';
 import { HttpActivity } from '../http.activity';
 import { AiToolFactory } from './ai-tool.factory';
-import { EmailActivity } from '../email.activity';
 
 @Injectable()
 export class GenericLlmActivity {
@@ -23,11 +23,9 @@ export class GenericLlmActivity {
   constructor(
     private readonly configService: ConfigService,
     private readonly db: DatabaseActivity,
-    private readonly sms: SmsActivity,
-    private readonly mail: EmailActivity,
     private readonly http: HttpActivity,
   ) {
-    this.toolFactory = new AiToolFactory(db, sms, mail, http);
+    this.toolFactory = new AiToolFactory(db, http);
   }
 
   async runLlm(args: {
@@ -44,24 +42,54 @@ export class GenericLlmActivity {
     }[];
   }) {
     console.log(`[Generic LLM] Running with args: ${JSON.stringify(args)}`);
-    const googleModels = ['gemini-3-flash-preview', 'gemini-2.5-flash'];
+    const googleModels = [
+      'gemini-3-flash-preview',
+      'gemini-1.5-flash',
+      'gemini-2.0-flash',
+      'gemini-2.5-flash',
+    ];
+    const anthropicModels = [
+      'claude-3-opus-20240229',
+      'claude-3-sonnet-20240229',
+      'claude-3-haiku-20240307',
+      'claude-3-5-sonnet-20240620',
+    ];
+    const groqModels = [
+      'llama3-8b-8192',
+      'llama3-70b-8192',
+      'mixtral-8x7b-32768',
+      'gemma-1.1-7b-it',
+      'openai-gpt-oss-20b',
+    ];
 
-    if (!args.modelName) {
-      args.modelName = 'gpt-4o';
-    }
+    const modelName = args.modelName || 'gpt-4o';
+    let llm: BaseChatModel;
 
-    // 1. Dynamic Model Selection
-    let llm: BaseChatModel = new ChatOpenAI({
-      model: args.modelName,
-      apiKey: this.configService.get('OPENAI_API_KEY'),
-      temperature: 1,
-      maxRetries: args.maxRetries ?? 3,
-    });
-
-    if (googleModels.includes(args.modelName)) {
+    if (googleModels.some((m) => modelName.includes(m))) {
       llm = new ChatGoogleGenerativeAI({
-        model: args.modelName,
+        model: modelName,
         apiKey: this.configService.get('GOOGLE_GEMINI_API_KEY'),
+        temperature: 1,
+        maxRetries: args.maxRetries ?? 3,
+      });
+    } else if (anthropicModels.some((m) => modelName.includes(m))) {
+      llm = new ChatAnthropic({
+        model: modelName,
+        apiKey: this.configService.get('ANTHROPIC_API_KEY'),
+        temperature: 1,
+        maxRetries: args.maxRetries ?? 3,
+      });
+    } else if (groqModels.some((m) => modelName.includes(m))) {
+      llm = new ChatGroq({
+        model: modelName,
+        apiKey: this.configService.get('GROQ_API_KEY'),
+        temperature: 1,
+        maxRetries: args.maxRetries ?? 3,
+      });
+    } else {
+      llm = new ChatOpenAI({
+        model: modelName,
+        apiKey: this.configService.get('OPENAI_API_KEY'),
         temperature: 1,
         maxRetries: args.maxRetries ?? 3,
       });

@@ -17,18 +17,28 @@ export class GenericLlmTool implements IWorkflowTool {
     }
 
     // 1. Resolve Templates
-    const systemPrompt = resolveTemplate(node.params.systemPrompt, state);
-    const userPrompt = resolveTemplate(node.params.userPrompt, state);
+    const systemPrompt = resolveTemplate(
+      node.params.systemPrompt as string,
+      state,
+    );
+    const userPrompt = resolveTemplate(node.params.userPrompt as string, state);
 
     // 2. Call Activity
-    const result = await activities.runLlm({
+    const result = await activities.runAgent({
       systemPrompt: systemPrompt || 'You are a helpful assistant.',
       userPrompt: userPrompt || '',
-      modelName: node.params.model || 'gpt-4o',
-      outputFields: node.params.outputFields,
-      boundTools: node.params.boundTools,
+      modelName: (node.params.model as string) || 'gpt-4o',
+      outputFields: node.params.outputFields as
+        | {
+            name: string;
+            description: string;
+            type: 'string' | 'number' | 'boolean';
+          }[]
+        | undefined,
+      boundTools: node.params.boundTools as string[],
+      mcpServers: node.params.mcpServers as string[],
     });
 
-    return result;
+    return result as unknown;
   }
 }

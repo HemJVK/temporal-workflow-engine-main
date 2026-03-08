@@ -31,11 +31,12 @@ export interface AgentActivities {
   makeHttpRequest(args: HttpArgs): Promise<any>;
   runSentimentAnalysis(args: { query: string }): Promise<{ sentiment: string }>;
   logStep(args: any): Promise<void>;
-  runLlm(args: {
+  runAgent(args: {
     systemPrompt: string;
     userPrompt: string;
     modelName?: string;
     boundTools: string[];
+    mcpServers?: any[];
     maxRetries?: number; // For API errors (Default: 3)
     maxIterations?: number; // For Agent loops (Default: 5)
     outputFields?: {

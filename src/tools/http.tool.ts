@@ -11,12 +11,14 @@ export class HttpTool implements IWorkflowTool {
     activities: AgentActivities,
   ) {
     const params = resolveParams(node.params, state);
-    console.log(`Running HTTP Tool [${params.method}] ${params.url}`);
+    console.log(
+      `Running HTTP Tool [${String(params.method)}] ${String(params.url)}`,
+    );
 
     // Logic specific to HTTP (Parsing JSON bodies)
     let parsedBody = params.body;
     if (
-      ['POST', 'PUT', 'PATCH'].includes(params.method) &&
+      ['POST', 'PUT', 'PATCH'].includes(String(params.method)) &&
       typeof params.body === 'string'
     ) {
       try {
@@ -36,8 +38,13 @@ export class HttpTool implements IWorkflowTool {
     }
 
     return await activities.makeHttpRequest({
-      method: params.method,
-      url: params.url,
+      method: String(params.method) as
+        | 'POST'
+        | 'PUT'
+        | 'PATCH'
+        | 'GET'
+        | 'DELETE',
+      url: String(params.url),
       headers,
       body: parsedBody,
     });

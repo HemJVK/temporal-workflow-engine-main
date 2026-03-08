@@ -14,7 +14,7 @@ export class SentimentAnalysisTool implements IWorkflowTool {
     const params = resolveParams(node.params, state);
 
     const result = await activities.runSentimentAnalysis({
-      query: params.query,
+      query: params.query as string,
     });
 
     state[node.id] = result;

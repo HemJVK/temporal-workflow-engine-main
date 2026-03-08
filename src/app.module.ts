@@ -7,19 +7,19 @@ import { WorkerService } from './worker/worker.service';
 import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation.schema';
-import { EmailActivity } from './activities/email.activity';
-import { SmsActivity } from './activities/sms.activity';
 import { HttpActivity } from './activities/http.activity';
 import { SentimentActivity } from './activities/sentiment.analysis.activity';
 import { ToolsModule } from './tools/tools.module';
 import { ModelsModule } from './models/models.module';
 import { LoggerModule } from './logger/logger.module';
 import { AuditModule } from './audit/audit.module';
+import { McpModule } from './mcp/mcp.module';
 import { GenericLlmActivity } from './activities/ai/generic-llm.activity';
+import { LangGraphActivity } from './activities/ai/langgraph.activity';
 import { LangGraphResearchActivity } from './activities/ai/research-activity';
+import { McpClientService } from './activities/ai/mcp-client.service';
 import { RunActivity } from './activities/run.activity';
 import { EntityModule } from './entity/entity.module';
-import { VoiceCallActivity } from './activities/voice-call.activity';
 
 @Module({
   imports: [
@@ -35,19 +35,19 @@ import { VoiceCallActivity } from './activities/voice-call.activity';
     LoggerModule,
     AuditModule,
     EntityModule,
+    McpModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
     DatabaseActivity,
-    EmailActivity,
-    SmsActivity,
     HttpActivity,
     SentimentActivity,
     GenericLlmActivity,
+    LangGraphActivity,
     LangGraphResearchActivity,
+    McpClientService,
     RunActivity,
-    VoiceCallActivity,
     WorkerService,
   ],
 })

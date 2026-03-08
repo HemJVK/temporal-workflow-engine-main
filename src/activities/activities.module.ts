@@ -1,35 +1,32 @@
 import { Module } from '@nestjs/common';
 import { DatabaseActivity } from './database.activity';
-import { EmailActivity } from './email.activity';
-import { SmsActivity } from './sms.activity';
 import { HttpActivity } from './http.activity';
 import { AuditActivity } from '../audit/audit.activity';
 import { GenericLlmActivity } from './ai/generic-llm.activity';
 import { RunActivity } from './run.activity';
 import { EntityModule } from 'src/entity/entity.module';
-import { VoiceCallActivity } from './voice-call.activity';
+import { LangGraphActivity } from './ai/langgraph.activity';
+import { McpClientService } from './ai/mcp-client.service';
 
 @Module({
   imports: [EntityModule],
   providers: [
     DatabaseActivity,
-    EmailActivity,
-    SmsActivity,
     HttpActivity,
     AuditActivity,
     GenericLlmActivity,
     RunActivity,
-    VoiceCallActivity,
+    LangGraphActivity,
+    McpClientService,
   ],
   exports: [
     DatabaseActivity,
-    EmailActivity,
-    SmsActivity,
     HttpActivity,
     AuditActivity,
     GenericLlmActivity,
     RunActivity,
-    VoiceCallActivity,
+    LangGraphActivity,
+    McpClientService,
   ],
 })
 export class ActivitiesModule {}

@@ -19,7 +19,7 @@ export class PostgresTool implements IWorkflowTool {
 
     // 1. Execute the Activity
     const result = await activities.executeSqlQuery({
-      query: params.query,
+      query: params.query as string,
       params: [],
     });
 
@@ -31,6 +31,6 @@ export class PostgresTool implements IWorkflowTool {
       };
     }
 
-    return result;
+    return result as unknown;
   }
 }
