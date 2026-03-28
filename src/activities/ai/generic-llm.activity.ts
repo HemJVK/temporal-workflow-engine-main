@@ -59,7 +59,7 @@ export class GenericLlmActivity {
       'llama3-70b-8192',
       'mixtral-8x7b-32768',
       'gemma-1.1-7b-it',
-      'openai-gpt-oss-20b',
+      'openai/gpt-oss-20b',
     ];
 
     const modelName = args.modelName || 'gpt-4o';

@@ -21,7 +21,9 @@ export class GenericLlmTool implements IWorkflowTool {
       node.params.systemPrompt as string,
       state,
     );
-    const userPrompt = resolveTemplate(node.params.userPrompt as string, state);
+    // Fallback: templates often use 'prompt' instead of 'userPrompt'
+    const userPromptRaw = (node.params.userPrompt || node.params.prompt) as string;
+    const userPrompt = resolveTemplate(userPromptRaw, state);
 
     // 2. Call Activity
     const result = await activities.runAgent({
@@ -30,10 +32,10 @@ export class GenericLlmTool implements IWorkflowTool {
       modelName: (node.params.model as string) || 'gpt-4o',
       outputFields: node.params.outputFields as
         | {
-            name: string;
-            description: string;
-            type: 'string' | 'number' | 'boolean';
-          }[]
+          name: string;
+          description: string;
+          type: 'string' | 'number' | 'boolean';
+        }[]
         | undefined,
       boundTools: node.params.boundTools as string[],
       mcpServers: node.params.mcpServers as string[],

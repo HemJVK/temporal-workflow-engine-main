@@ -27,7 +27,7 @@ export const getStatusQuery = defineQuery('GET_STATUS');
 
 // Configure Activities
 const activities = proxyActivities<AgentActivities>({
-  startToCloseTimeout: '1 minute',
+  startToCloseTimeout: '3 minutes',
   retry: {
     // 1. If we hit an error, wait 1 second before retrying
     initialInterval: '1s',

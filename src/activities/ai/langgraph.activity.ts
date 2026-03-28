@@ -56,7 +56,7 @@ export class LangGraphActivity {
       'llama3-70b-8192',
       'mixtral-8x7b-32768',
       'gemma-1.1-7b-it',
-      'openai-gpt-oss-20b',
+      'openai/gpt-oss-20b',
     ];
 
     const modelName = args.modelName || 'gpt-4o';
@@ -93,8 +93,35 @@ export class LangGraphActivity {
 
     // 2. Load MCP Tools dynamically
     if (args.mcpServers && Array.isArray(args.mcpServers)) {
-      for (const serverConfig of args.mcpServers) {
+      for (const serverInput of args.mcpServers as any[]) {
         try {
+          // If the UI passes just the string ID, we need to look it up in the DB
+          let serverConfig: McpServerConfig;
+
+          if (typeof serverInput === 'string') {
+            this.logger.log(`[LangGraph] Looking up MCP Server by ID: ${serverInput}`);
+            const queryResult = await this.db.executeSqlQuery({
+              query: `SELECT id, name, "transportType", config FROM mcp_servers WHERE id = $1`,
+              params: [serverInput]
+            });
+
+            if (Array.isArray(queryResult) && queryResult.length > 0) {
+              const row = queryResult[0];
+              serverConfig = {
+                id: row.id,
+                command: row.config.command,
+                args: row.config.args || [],
+                env: row.config.env || {},
+              };
+            } else {
+              this.logger.warn(`[LangGraph] MCP Server ID ${serverInput} not found in DB.`);
+              continue;
+            }
+          } else {
+            // It's already an object (used by other tests/legacy)
+            serverConfig = serverInput as McpServerConfig;
+          }
+
           const client = await this.mcpService.getClient(serverConfig);
           const toolsRes = await client.listTools();
 
@@ -103,8 +130,6 @@ export class LangGraphActivity {
               `Registering MCP Tool: ${mcpTool.name} from server ${serverConfig.id}`,
             );
 
-            // Map JSON schema to Zod fallback or use tool helper in LangChain >= 0.2
-            // We use a generic DynamicStructuredTool and pass the raw JSON Schema properties to Zod
             const dynamicTool = new DynamicStructuredTool({
               name: mcpTool.name,
               description:
@@ -125,7 +150,7 @@ export class LangGraphActivity {
             lcTools.push(dynamicTool);
           }
         } catch (e) {
-          this.logger.error(`Failed to load MCP server ${serverConfig.id}`, e);
+          this.logger.error(`Failed to load MCP server ${serverInput}`, e);
         }
       }
     }
