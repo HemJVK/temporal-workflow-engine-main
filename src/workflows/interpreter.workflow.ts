@@ -13,6 +13,7 @@ import { WorkflowPayload } from 'src/models/workflow.payload.model';
 import { WorkflowState } from 'src/models/workflow.state.model';
 import { WorkflowStep } from 'src/models/workflow.step.model';
 import { ToolRegistry } from 'src/tools/tool.registry';
+import { CreditActivity } from 'src/activities/credit.activity';
 import { getErrorMessage, resolveTemplate } from './utils';
 
 // ---------------------------------------------------------------------------
@@ -26,7 +27,7 @@ export const voiceCallbackSignal = defineSignal<[any]>('VOICE_CALLBACK');
 export const getStatusQuery = defineQuery('GET_STATUS');
 
 // Configure Activities
-const activities = proxyActivities<AgentActivities>({
+const activities = proxyActivities<AgentActivities & CreditActivity>({
   startToCloseTimeout: '3 minutes',
   retry: {
     // 1. If we hit an error, wait 1 second before retrying
@@ -85,6 +86,12 @@ export async function InterpreterWorkflow(payload: WorkflowPayload) {
     voiceCallData = payload as { nodeId: string; data: unknown };
   });
 
+  // --- CREDIT PREFLIGHT ---
+  if (payload.userId) {
+    console.log(`[Interpreter] Performing credit preflight for user: ${payload.userId}`);
+    await activities.checkPreflightCredits(payload.userId, 0.01);
+  }
+
   // --- THE EVENT LOOP ---
   while (currentNodeId) {
     const node: WorkflowStep = payload.steps[currentNodeId];
@@ -124,6 +131,19 @@ export async function InterpreterWorkflow(payload: WorkflowPayload) {
         // Store result in state (e.g., workflowState['tool_postgres_123'] = { rows: [] })
         if (result !== undefined) {
           workflowState[node.id] = result;
+        }
+
+        // --- CREDIT DEDUCTION (Baseline for AI Tools) ---
+        if (payload.userId && ['tool_generic_llm', 'ai_agent', 'tool_sentiment_analysis', 'agent_researcher'].includes(node.type)) {
+          console.log(`[Interpreter] Deducting credits for AI node: ${node.type}`);
+          // FIXME: Use real token counts once activities support it
+          await activities.deductExactCredits(
+            payload.userId,
+            100, // Dummy prompt tokens
+            100, // Dummy completion tokens
+            'baseline-ai-model',
+            payload.workflowId
+          );
         }
         if (node.type == 'make_conversation_call_twilio') {
           // 2. PAUSE WORKFLOW: Wait until we receive the Signal matching this Node ID

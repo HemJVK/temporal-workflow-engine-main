@@ -1,12 +1,11 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-
-// Need whatever entity stores the MCP server configs.
-// Assuming an McpServer entity or just storing them in memory or a simple JSON file for now,
-// but based on prior context, there is a database. I'll scaffold a basic service that fetches from Awesome MCP.
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class McpService implements OnModuleInit {
   private readonly logger = new Logger(McpService.name);
+
+  constructor(private readonly configService: ConfigService) {}
 
   // Temporary in-memory store if no DB entity exists for MCP servers yet
   private installedServers: any[] = [];
@@ -123,8 +122,24 @@ export class McpService implements OnModuleInit {
             }))
           : [];
       } else if (registry === 'glama') {
-        // Fallback for Glama
-        return [];
+        const glamaKey = this.configService.get<string>('GLAMA_API_KEY');
+        const glamaUrl = `https://glama.ai/api/mcp/v1/servers?q=${encodeURIComponent(query)}`;
+        const glamaRes = await fetch(glamaUrl, {
+          headers: glamaKey ? { Authorization: `Bearer ${glamaKey}` } : {},
+        });
+        if (!glamaRes.ok) {
+          this.logger.error(`Glama API returned ${glamaRes.status}`);
+          return [];
+        }
+        const glamaData = (await glamaRes.json()) as any;
+        // Glama returns { servers: [...] } or { data: [...] }
+        const list: any[] = glamaData.servers || glamaData.data || glamaData || [];
+        return list.map((s: any) => ({
+          id: s.id || s.slug || s.name,
+          name: s.name || s.id,
+          description: s.description || '',
+          package: s.package || s.npmPackage || '',
+        }));
       }
     } catch (e) {
       this.logger.error(`Failed to fetch marketplace ${registry}`, e);

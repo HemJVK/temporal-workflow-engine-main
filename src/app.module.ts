@@ -20,10 +20,15 @@ import { LangGraphResearchActivity } from './activities/ai/research-activity';
 import { McpClientService } from './activities/ai/mcp-client.service';
 import { RunActivity } from './activities/run.activity';
 import { EntityModule } from './entity/entity.module';
+import { CreditModule } from './credit/credit.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CreditActivity } from './activities/credit.activity';
 
 @Module({
   imports: [
     DatabaseModule,
+    CreditModule,
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
@@ -48,6 +53,7 @@ import { EntityModule } from './entity/entity.module';
     LangGraphResearchActivity,
     McpClientService,
     RunActivity,
+    CreditActivity,
     WorkerService,
   ],
 })

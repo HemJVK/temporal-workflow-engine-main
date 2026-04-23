@@ -58,11 +58,43 @@ export class LangGraphActivity {
       'gemma-1.1-7b-it',
       'openai/gpt-oss-20b',
     ];
+    const openRouterModels = [
+      'nvidia/nemotron-3-super-120b-a12b:free',
+      'qwen/qwen3.6-plus:free',
+      'nvidia/nemotron-nano-12b-v2-vl:free',
+    ];
 
-    const modelName = args.modelName || 'gpt-4o';
+    // Best free OpenRouter model for Agents: natively supports tools & JSON structure
+    const DEFAULT_MODEL = 'google/gemini-2.0-flash-lite-preview-02-05:free';
+    const modelName = args.modelName || DEFAULT_MODEL;
     let llm: any;
 
-    if (googleModels.some((m) => modelName.includes(m))) {
+    // OpenRouter prefix detection — route through OpenRouter-compatible endpoint
+    const openRouterPrefixes = [
+      'nvidia/', 'meta-llama/', 'mistralai/', 'openrouter/', 'deepseek/',
+      'qwen/', 'cohere/', 'perplexity/', 'x-ai/', 'microsoft/',
+    ];
+    const isOpenRouterModel =
+      openRouterPrefixes.some((p) => modelName.startsWith(p)) ||
+      modelName.includes(':free') ||
+      modelName.includes(':nitro') ||
+      modelName.includes(':extended');
+
+    if (isOpenRouterModel) {
+      llm = new ChatOpenAI({
+        model: modelName,
+        apiKey: this.configService.get('OPENROUTER_API_KEY'),
+        maxTokens: 1024, // cap to avoid 402 on free-tier models
+        configuration: {
+          baseURL: 'https://openrouter.ai/api/v1',
+          defaultHeaders: {
+            'HTTP-Referer': 'http://localhost:5173',
+            'X-Title': 'Agent Flow',
+          },
+        },
+        temperature: 0,
+      });
+    } else if (googleModels.some((m) => modelName.includes(m))) {
       llm = new ChatGoogleGenerativeAI({
         model: modelName,
         apiKey: this.configService.get('GOOGLE_GEMINI_API_KEY'),
@@ -81,9 +113,18 @@ export class LangGraphActivity {
         temperature: 0,
       });
     } else {
+      // Default fallback: route through OpenRouter (supports GPT-4o, GPT-4-turbo, etc.)
       llm = new ChatOpenAI({
         model: modelName,
-        apiKey: this.configService.get('OPENAI_API_KEY'),
+        apiKey: this.configService.get('OPENROUTER_API_KEY'),
+        maxTokens: 1024, // cap to avoid 402 on free-tier models
+        configuration: {
+          baseURL: 'https://openrouter.ai/api/v1',
+          defaultHeaders: {
+            'HTTP-Referer': 'http://localhost:5173',
+            'X-Title': 'Agent Flow',
+          },
+        },
         temperature: 0,
       });
     }

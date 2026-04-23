@@ -22,4 +22,5 @@ export const validationSchema = Joi.object({
   ANTHROPIC_API_KEY: Joi.string().optional(),
   GOOGLE_GEMINI_API_KEY: Joi.string().optional(),
   GROQ_API_KEY: Joi.string().optional(),
+  OPENROUTER_API_KEY: Joi.string().optional(),
 });

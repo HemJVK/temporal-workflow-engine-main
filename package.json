@@ -34,6 +34,7 @@
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.1.16",
     "@nestjs/platform-express": "^11.1.16",
+    "@nestjs/schedule": "^6.1.1",
     "@nestjs/typeorm": "^11.0.0",
     "@sendgrid/mail": "^8.1.6",
     "@temporalio/activity": "^1.15.0",
@@ -46,6 +47,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "twilio": "^5.12.2",
+    "typeorm": "^0.3.28",
     "zod": "^4.3.6"
   },
   "devDependencies": {

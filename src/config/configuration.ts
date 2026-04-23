@@ -7,7 +7,9 @@ const configuration = () => ({
 
   // 2. Temporal Config (Mixed)
   temporal: {
-    address: process.env.TEMPORAL_ADDRESS || 'localhost:7233',
+    address:
+      process.env.TEMPORAL_ADDRESS ||
+      `${process.env.TEMPORAL_HOST || 'localhost'}:${process.env.TEMPORAL_PORT || '7233'}`,
     taskQueue: process.env.TEMPORAL_TASK_QUEUE || 'agentic-workflow-queue',
     namespace: process.env.TEMPORAL_NAMESPACE || 'default',
   },
@@ -24,6 +26,8 @@ const configuration = () => ({
   // 4. API Keys (Secrets)
   ai: {
     openaiKey: process.env.OPENAI_API_KEY,
+    openrouterKey: process.env.OPENROUTER_API_KEY,
+    defaultModel: 'nvidia/nemotron-3-super-120b-a12b:free',
   },
 
   // 5. Twilio Config (Secrets)

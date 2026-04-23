@@ -20,8 +20,16 @@ export class LangGraphResearchActivity {
 
   constructor(private configService: ConfigService) {
     this.model = new ChatOpenAI({
-      model: 'gpt-4o',
-      apiKey: this.configService.get('OPENAI_API_KEY'),
+      model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
+      apiKey: this.configService.get('OPENROUTER_API_KEY'),
+      maxTokens: 1024,
+      configuration: {
+        baseURL: 'https://openrouter.ai/api/v1',
+        defaultHeaders: {
+          'HTTP-Referer': 'http://localhost:5173',
+          'X-Title': 'Agent Flow',
+        },
+      },
       temperature: 0,
     });
 

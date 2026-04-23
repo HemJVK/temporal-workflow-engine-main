@@ -5,5 +5,6 @@ export interface WorkflowPayload {
   workflowId: string;
   startAt: string;
   steps: Record<string, WorkflowStep>;
+  userId?: string;
   initialState?: WorkflowState;
 }
