@@ -1,8 +1,8 @@
 import { IWorkflowTool } from './tool.interface';
-import { resolveParams } from 'src/workflows/utils';
-import { WorkflowState } from 'src/models/workflow.state.model';
-import { AgentActivities } from 'src/models/activity.args.model';
-import { WorkflowStep } from 'src/models/workflow.step.model';
+import { resolveParams } from '../workflows/utils';
+import { WorkflowState } from '../models/workflow.state.model';
+import { AgentActivities } from '../models/activity.args.model';
+import { WorkflowStep } from '../models/workflow.step.model';
 
 export class PostgresTool implements IWorkflowTool {
   async execute(
@@ -18,6 +18,7 @@ export class PostgresTool implements IWorkflowTool {
     if (!params.query) throw new Error('No SQL query provided');
 
     // 1. Execute the Activity
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
     const result = await activities.executeSqlQuery({
       query: params.query as string,
       params: [],

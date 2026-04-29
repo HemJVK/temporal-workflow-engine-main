@@ -33,7 +33,10 @@ export class AuditLog {
   @Column()
   status: 'STARTED' | 'COMPLETED' | 'FAILED';
 
-  @Column('jsonb', { nullable: true })
+  @Column({
+    type: process.env.NODE_ENV === 'test' ? 'json' : 'jsonb',
+    nullable: true,
+  })
   details: any; // Inputs, Outputs, Errors
 
   @CreateDateColumn()

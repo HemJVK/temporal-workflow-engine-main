@@ -19,6 +19,7 @@ export class SentimentActivity {
   constructor(private readonly configService: ConfigService) {
     this.model = new ChatOpenAI({
       model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
       apiKey: this.configService.get('OPENROUTER_API_KEY'),
       maxTokens: 256, // sentiment only needs a very short output
       configuration: {
@@ -57,6 +58,7 @@ export class SentimentActivity {
     };
 
     // --- NODE 2: MESSAGE SENDER ---
+    // eslint-disable-next-line @typescript-eslint/require-await -- Langchain internal dynamic types / Third party library types
     const smsNode = async (state: typeof GraphState.State) => {
       console.log(`--- Mock Sending SMS (${state.sentiment}) ---`);
 

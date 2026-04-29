@@ -36,11 +36,17 @@ export class WorkflowRun {
   status: 'RUNNING' | 'COMPLETED' | 'FAILED' | 'TERMINATED';
 
   // Snapshot of input (Webhook body, etc.)
-  @Column('jsonb', { nullable: true })
+  @Column({
+    type: process.env.NODE_ENV === 'test' ? 'json' : 'jsonb',
+    nullable: true,
+  })
   input: any;
 
   // Snapshot of final output
-  @Column('jsonb', { nullable: true })
+  @Column({
+    type: process.env.NODE_ENV === 'test' ? 'json' : 'jsonb',
+    nullable: true,
+  })
   output: any;
 
   // ✅ ADDITION 1: Explicit Error Column
@@ -52,7 +58,10 @@ export class WorkflowRun {
   // ✅ ADDITION 2: Searchable Metadata / Context
   // Store business keys here (e.g., { "email": "user@gmail.com", "leadId": "123" }).
   // This allows you to build a "Search Runs by Email" feature in your UI.
-  @Column('jsonb', { default: {} })
+  @Column({
+    type: process.env.NODE_ENV === 'test' ? 'json' : 'jsonb',
+    default: '{}',
+  })
   metadata: Record<string, any>;
 
   // ✅ ADDITION 3: Trigger Context

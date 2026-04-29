@@ -1,13 +1,24 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { CreditLedgerEntity } from './credit-ledger.entity';
 import { UserEntity } from './user.entity';
 
 @Entity('credit_accounts')
 export class CreditAccountEntity {
-   @PrimaryColumn({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid' })
   userId: string;
 
-  @ManyToOne(() => UserEntity, (user) => user.creditAccounts, { onDelete: 'CASCADE' })
+  @ManyToOne(() => UserEntity, (user) => user.creditAccounts, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'userId' })
   user: UserEntity;
 

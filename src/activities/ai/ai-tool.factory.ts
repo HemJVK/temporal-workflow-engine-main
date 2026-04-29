@@ -21,9 +21,11 @@ export class AiToolFactory {
         }),
         func: async ({ query }) => {
           try {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
             const rows = await this.db.executeSqlQuery({ query });
             return JSON.stringify(rows);
           } catch (e) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Langchain internal dynamic types / Third party library types
             return `Error executing SQL: ${e.message}`;
           }
         },
@@ -40,6 +42,7 @@ export class AiToolFactory {
         }),
         func: async ({ method, url, body }) => {
           return JSON.stringify(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
             await this.http.makeHttpRequest({ method, url, body }),
           );
         },

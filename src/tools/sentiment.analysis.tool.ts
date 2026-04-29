@@ -1,8 +1,8 @@
-import { AgentActivities } from 'src/models/activity.args.model';
-import { WorkflowState } from 'src/models/workflow.state.model';
-import { WorkflowStep } from 'src/models/workflow.step.model';
+import { AgentActivities } from '../models/activity.args.model';
+import { WorkflowState } from '../models/workflow.state.model';
+import { WorkflowStep } from '../models/workflow.step.model';
 import { IWorkflowTool } from './tool.interface';
-import { resolveParams } from 'src/workflows/utils';
+import { resolveParams } from '../workflows/utils';
 
 export class SentimentAnalysisTool implements IWorkflowTool {
   async execute(

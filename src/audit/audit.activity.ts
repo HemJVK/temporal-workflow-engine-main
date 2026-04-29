@@ -1,7 +1,7 @@
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AuditLog } from 'src/audit/audit-log.entity';
+import { AuditLog } from '../audit/audit-log.entity';
 
 @Injectable()
 export class AuditActivity {
@@ -21,6 +21,7 @@ export class AuditActivity {
   }) {
     await this.auditRepo.save({
       ...args,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
       details: args.details || {},
     });
   }

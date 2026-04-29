@@ -4,7 +4,7 @@ import { HttpTool } from './http.tool';
 import { SentimentAnalysisTool } from './sentiment.analysis.tool';
 import { GenericLlmTool } from './generic-llm.tool';
 import { ResearcherTool } from './researcher.tool';
-import { NodeType } from 'src/entity/workflow.types';
+import { NodeType } from '../entity/workflow.types';
 
 const registry: Partial<Record<NodeType, IWorkflowTool>> = {
   query_db_postgres: new PostgresTool(),

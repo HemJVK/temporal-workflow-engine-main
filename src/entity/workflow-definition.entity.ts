@@ -35,16 +35,25 @@ export class WorkflowDefinition {
   // -----------------------------------------------------------------
   // 2. BLUEPRINT (UI Editor State)
   // -----------------------------------------------------------------
-  @Column('jsonb', { default: [] })
+  @Column({
+    type: process.env.NODE_ENV === 'test' ? 'json' : 'jsonb',
+    default: '[]',
+  })
   nodes: WorkflowNode[];
 
-  @Column('jsonb', { default: [] })
+  @Column({
+    type: process.env.NODE_ENV === 'test' ? 'json' : 'jsonb',
+    default: '[]',
+  })
   edges: WorkflowEdge[];
 
   // -----------------------------------------------------------------
   // 3. EXECUTION SNAPSHOT (The "Compiled" Version)
   // -----------------------------------------------------------------
-  @Column('jsonb', { nullable: true })
+  @Column({
+    type: process.env.NODE_ENV === 'test' ? 'json' : 'jsonb',
+    nullable: true,
+  })
   deployedGraph: {
     steps: Record<string, any>;
     startAt: string;

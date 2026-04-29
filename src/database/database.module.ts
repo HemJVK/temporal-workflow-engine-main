@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuditLog } from 'src/audit/audit-log.entity';
-import { WorkflowDefinition } from 'src/entity/workflow-definition.entity';
-import { WorkflowRun } from 'src/entity/workflow-run.entity';
+import { AuditLog } from '../audit/audit-log.entity';
+import { WorkflowDefinition } from '../entity/workflow-definition.entity';
+import { WorkflowRun } from '../entity/workflow-run.entity';
 
 @Module({
   imports: [

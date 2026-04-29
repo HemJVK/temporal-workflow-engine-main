@@ -10,4 +10,5 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3001);
 }
+// eslint-disable-next-line @typescript-eslint/no-floating-promises -- Langchain internal dynamic types / Third party library types
 bootstrap();

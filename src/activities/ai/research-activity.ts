@@ -21,6 +21,7 @@ export class LangGraphResearchActivity {
   constructor(private configService: ConfigService) {
     this.model = new ChatOpenAI({
       model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
       apiKey: this.configService.get('OPENROUTER_API_KEY'),
       maxTokens: 1024,
       configuration: {
@@ -42,12 +43,14 @@ export class LangGraphResearchActivity {
 
     // --- NODE 1: THE AGENT (Decides what to do) ---
     const agentNode = async (state: typeof AgentState.State) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Langchain internal dynamic types / Third party library types
       const modelWithTools = this.model.bindTools(this.tools);
       const response = await modelWithTools.invoke(state.messages);
       return { messages: [response] };
     };
 
     // --- NODE 2: THE TOOLS (Executes search) ---
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- Langchain internal dynamic types / Third party library types
     const toolNode = new ToolNode(this.tools);
 
     // --- EDGES: ROUTING LOGIC ---

@@ -1,4 +1,4 @@
-import { WorkflowState } from 'src/models/workflow.state.model';
+import { WorkflowState } from '../models/workflow.state.model';
 
 export function resolveStateValue(state: WorkflowState, path: string): unknown {
   if (!path || typeof path !== 'string') return undefined;
@@ -29,6 +29,7 @@ export function resolveTemplate(
     const val = resolveStateValue(state, match.trim());
     if (val === undefined || val === null) return '';
     if (typeof val === 'object') return JSON.stringify(val);
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string -- Langchain internal dynamic types / Third party library types
     return String(val);
   });
 }

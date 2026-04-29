@@ -61,11 +61,6 @@ export class GenericLlmActivity {
       'gemma-1.1-7b-it',
       'openai/gpt-oss-20b',
     ];
-    const openRouterModels = [
-      'nvidia/nemotron-3-super-120b-a12b:free',
-      'qwen/qwen3.6-plus:free',
-      'nvidia/nemotron-nano-12b-v2-vl:free',
-    ];
 
     // Best free OpenRouter model for Agents: natively supports tools & JSON structure
     const DEFAULT_MODEL = 'google/gemini-2.0-flash-lite-preview-02-05:free';
@@ -74,8 +69,16 @@ export class GenericLlmActivity {
 
     // OpenRouter prefix detection — route through OpenRouter-compatible endpoint
     const openRouterPrefixes = [
-      'nvidia/', 'meta-llama/', 'mistralai/', 'openrouter/', 'deepseek/',
-      'qwen/', 'cohere/', 'perplexity/', 'x-ai/', 'microsoft/',
+      'nvidia/',
+      'meta-llama/',
+      'mistralai/',
+      'openrouter/',
+      'deepseek/',
+      'qwen/',
+      'cohere/',
+      'perplexity/',
+      'x-ai/',
+      'microsoft/',
     ];
     const isOpenRouterModel =
       openRouterPrefixes.some((p) => modelName.startsWith(p)) ||
@@ -86,6 +89,7 @@ export class GenericLlmActivity {
     if (isOpenRouterModel) {
       llm = new ChatOpenAI({
         model: modelName,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
         apiKey: this.configService.get('OPENROUTER_API_KEY'),
         maxTokens: 1024, // cap to avoid 402 on free-tier models
         configuration: {
@@ -101,6 +105,7 @@ export class GenericLlmActivity {
     } else if (googleModels.some((m) => modelName.includes(m))) {
       llm = new ChatGoogleGenerativeAI({
         model: modelName,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
         apiKey: this.configService.get('GOOGLE_GEMINI_API_KEY'),
         temperature: 1,
         maxRetries: args.maxRetries ?? 3,
@@ -108,6 +113,7 @@ export class GenericLlmActivity {
     } else if (anthropicModels.some((m) => modelName.includes(m))) {
       llm = new ChatAnthropic({
         model: modelName,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
         apiKey: this.configService.get('ANTHROPIC_API_KEY'),
         temperature: 1,
         maxRetries: args.maxRetries ?? 3,
@@ -115,6 +121,7 @@ export class GenericLlmActivity {
     } else if (groqModels.some((m) => modelName.includes(m))) {
       llm = new ChatGroq({
         model: modelName,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
         apiKey: this.configService.get('GROQ_API_KEY'),
         temperature: 1,
         maxRetries: args.maxRetries ?? 3,
@@ -123,6 +130,7 @@ export class GenericLlmActivity {
       // Default fallback: route through OpenRouter (supports GPT-4o, GPT-4-turbo, etc.)
       llm = new ChatOpenAI({
         model: modelName,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
         apiKey: this.configService.get('OPENROUTER_API_KEY'),
         maxTokens: 1024, // cap to avoid 402 on free-tier models
         configuration: {
@@ -151,6 +159,7 @@ export class GenericLlmActivity {
         if (field.type === 'number') validator = z.number();
         if (field.type === 'boolean') validator = z.boolean();
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call -- Langchain internal dynamic types / Third party library types
         shape[field.name] = validator.describe(field.description);
       });
 
@@ -180,6 +189,7 @@ export class GenericLlmActivity {
         ['placeholder', '{agent_scratchpad}'], // Critical for agent scratchpad
       ]);
 
+      // eslint-disable-next-line @typescript-eslint/await-thenable -- Langchain internal dynamic types / Third party library types
       const agent = await createToolCallingAgent({ llm, tools, prompt });
       const executor = new AgentExecutor({
         agent,
@@ -198,6 +208,7 @@ export class GenericLlmActivity {
 
       // AgentExecutor returns { output: "final answer" }
       // We try to parse it if structured fields were requested, else return text
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument -- Langchain internal dynamic types / Third party library types
       return this.handleOutputParsing(result.output, args.outputFields);
     }
 
@@ -210,6 +221,7 @@ export class GenericLlmActivity {
       ]);
 
       // Return a standard object so subsequent nodes can access {{node.text}}
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions -- Langchain internal dynamic types / Third party library types
       console.log(`[Generic LLM] Response: ${response.content}`);
       return { text: response.content };
     }
@@ -221,6 +233,7 @@ export class GenericLlmActivity {
     // If user wanted JSON but we used an Agent, the Agent usually returns text.
     // You might need a second pass or assume the Agent output valid JSON.
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Langchain internal dynamic types / Third party library types
       return JSON.parse(text);
     } catch {
       return { text };

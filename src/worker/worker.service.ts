@@ -8,11 +8,11 @@ import { Worker } from '@temporalio/worker';
 
 import { DatabaseActivity } from '../activities/database.activity';
 import { ConfigService } from '@nestjs/config';
-import { HttpActivity } from 'src/activities/http.activity';
-import { AuditActivity } from 'src/audit/audit.activity';
-import { LangGraphActivity } from 'src/activities/ai/langgraph.activity';
-import { LangGraphResearchActivity } from 'src/activities/ai/research-activity';
-import { RunActivity } from 'src/activities/run.activity';
+import { HttpActivity } from '../activities/http.activity';
+import { AuditActivity } from '../audit/audit.activity';
+import { LangGraphActivity } from '../activities/ai/langgraph.activity';
+import { LangGraphResearchActivity } from '../activities/ai/research-activity';
+import { RunActivity } from '../activities/run.activity';
 import { CreditActivity } from '../activities/credit.activity';
 import { GenericLlmActivity } from '../activities/ai/generic-llm.activity';
 

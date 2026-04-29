@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { WorkerService } from './worker.service';
 import { Activity } from '@temporalio/worker/lib/activity';
-import { EntityModule } from 'src/entity/entity.module';
+import { EntityModule } from '../entity/entity.module';
 
 @Module({
   providers: [WorkerService],

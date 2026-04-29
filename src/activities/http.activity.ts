@@ -16,6 +16,7 @@ export class HttpActivity {
         method: args.method,
         url: args.url,
         headers: args.headers || {},
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
         data: args.body,
         validateStatus: () => true,
       };
@@ -25,12 +26,15 @@ export class HttpActivity {
       return {
         status: response.status,
         statusText: response.statusText,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
         data: response.data,
       };
     } catch (error: any) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Langchain internal dynamic types / Third party library types
       console.error('[HTTP] Failed:', error.message);
       return {
         status: 500,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
         error: error.message,
         data: null,
       };

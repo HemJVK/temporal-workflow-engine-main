@@ -7,13 +7,15 @@ import { ModelPricingEntity } from './model-pricing.entity';
 import { UserEntity } from './user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    WorkflowRun, 
-    CreditAccountEntity, 
-    CreditLedgerEntity, 
-    ModelPricingEntity,
-    UserEntity
-  ])],
+  imports: [
+    TypeOrmModule.forFeature([
+      WorkflowRun,
+      CreditAccountEntity,
+      CreditLedgerEntity,
+      ModelPricingEntity,
+      UserEntity,
+    ]),
+  ],
   providers: [],
   exports: [TypeOrmModule],
 })

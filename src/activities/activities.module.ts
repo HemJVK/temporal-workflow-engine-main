@@ -4,7 +4,7 @@ import { HttpActivity } from './http.activity';
 import { AuditActivity } from '../audit/audit.activity';
 import { GenericLlmActivity } from './ai/generic-llm.activity';
 import { RunActivity } from './run.activity';
-import { EntityModule } from 'src/entity/entity.module';
+import { EntityModule } from '../entity/entity.module';
 import { LangGraphActivity } from './ai/langgraph.activity';
 import { McpClientService } from './ai/mcp-client.service';
 

@@ -1,4 +1,4 @@
-import { NodeType } from 'src/entity/workflow.types';
+import { NodeType } from '../entity/workflow.types';
 
 export interface WorkflowStep {
   id: string;

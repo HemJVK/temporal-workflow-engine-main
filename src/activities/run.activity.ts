@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { WorkflowRun } from 'src/entity/workflow-run.entity';
+import { WorkflowRun } from '../entity/workflow-run.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -22,6 +22,7 @@ export class RunActivity {
       { temporalRunId: args.runId },
       {
         status: args.status,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Langchain internal dynamic types / Third party library types
         output: args.output || null,
         error: args.error || null,
         completedAt: new Date(),

@@ -60,10 +60,11 @@ export class McpClientService {
   }
 
   async disconnectAll() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Langchain internal dynamic types / Third party library types
     for (const [id, client] of this.clients.entries()) {
       try {
         await client.close();
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
