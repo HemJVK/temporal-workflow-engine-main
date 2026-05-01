@@ -131,9 +131,10 @@ export class McpService implements OnModuleInit {
           this.logger.error(`Glama API returned ${glamaRes.status}`);
           return [];
         }
-        const glamaData = (await glamaRes.json()) as any;
+        const glamaData = await glamaRes.json();
         // Glama returns { servers: [...] } or { data: [...] }
-        const list: any[] = glamaData.servers || glamaData.data || glamaData || [];
+        const list: any[] =
+          glamaData.servers || glamaData.data || glamaData || [];
         return list.map((s: any) => ({
           id: s.id || s.slug || s.name,
           name: s.name || s.id,

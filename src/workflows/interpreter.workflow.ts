@@ -14,6 +14,7 @@ import { WorkflowState } from 'src/models/workflow.state.model';
 import { WorkflowStep } from 'src/models/workflow.step.model';
 import { ToolRegistry } from 'src/tools/tool.registry';
 import { CreditActivity } from 'src/activities/credit.activity';
+import { LogicActivity } from 'src/activities/logic.activity';
 import { getErrorMessage, resolveTemplate } from './utils';
 
 // ---------------------------------------------------------------------------
@@ -27,7 +28,9 @@ export const voiceCallbackSignal = defineSignal<[any]>('VOICE_CALLBACK');
 export const getStatusQuery = defineQuery('GET_STATUS');
 
 // Configure Activities
-const activities = proxyActivities<AgentActivities & CreditActivity>({
+const activities = proxyActivities<
+  AgentActivities & CreditActivity & LogicActivity
+>({
   startToCloseTimeout: '3 minutes',
   retry: {
     // 1. If we hit an error, wait 1 second before retrying
@@ -88,7 +91,9 @@ export async function InterpreterWorkflow(payload: WorkflowPayload) {
 
   // --- CREDIT PREFLIGHT ---
   if (payload.userId) {
-    console.log(`[Interpreter] Performing credit preflight for user: ${payload.userId}`);
+    console.log(
+      `[Interpreter] Performing credit preflight for user: ${payload.userId}`,
+    );
     await activities.checkPreflightCredits(payload.userId, 0.01);
   }
 
@@ -126,6 +131,7 @@ export async function InterpreterWorkflow(payload: WorkflowPayload) {
           node,
           workflowState,
           activities,
+          payload,
         );
 
         // Store result in state (e.g., workflowState['tool_postgres_123'] = { rows: [] })
@@ -134,15 +140,25 @@ export async function InterpreterWorkflow(payload: WorkflowPayload) {
         }
 
         // --- CREDIT DEDUCTION (Baseline for AI Tools) ---
-        if (payload.userId && ['tool_generic_llm', 'ai_agent', 'tool_sentiment_analysis', 'agent_researcher'].includes(node.type)) {
-          console.log(`[Interpreter] Deducting credits for AI node: ${node.type}`);
+        if (
+          payload.userId &&
+          [
+            'tool_generic_llm',
+            'ai_agent',
+            'tool_sentiment_analysis',
+            'agent_researcher',
+          ].includes(node.type)
+        ) {
+          console.log(
+            `[Interpreter] Deducting credits for AI node: ${node.type}`,
+          );
           // FIXME: Use real token counts once activities support it
           await activities.deductExactCredits(
             payload.userId,
             100, // Dummy prompt tokens
             100, // Dummy completion tokens
             'baseline-ai-model',
-            payload.workflowId
+            payload.workflowId,
           );
         }
         if (node.type == 'make_conversation_call_twilio') {
@@ -168,7 +184,65 @@ export async function InterpreterWorkflow(payload: WorkflowPayload) {
       }
 
       // B. Handle Native Flow Control Nodes
-      else if (node.type === 'trigger_start') {
+      else if (
+        node.type.startsWith('custom_block_') ||
+        node.type === 'logic_custom_block'
+      ) {
+        console.log(`[Interpreter] Executing Custom Block: ${node.type}`);
+        // Evaluate dynamic inputs into a clean object
+        const inputs: Record<string, any> = {};
+        for (const [key, val] of Object.entries(node.params || {})) {
+          if (typeof val === 'string') {
+            inputs[key] = resolveTemplate(val, workflowState);
+          } else {
+            inputs[key] = val; // pass through numbers/objects
+          }
+        }
+
+        // Execute the script securely via Activity
+        const script = node.params.customLogic || "return { status: 'empty' };";
+        const result = await activities.runCustomLogic({ script, inputs });
+
+        // Store result in state
+        workflowState[node.id] = result;
+      } else if (node.type.startsWith('package_')) {
+        const packageWorkflowId = node.type.replace('package_', '');
+        console.log(
+          `[Interpreter] Executing Package Workflow: ${packageWorkflowId}`,
+        );
+
+        // 1. Evaluate inputs to pass to the package
+        const inputs: Record<string, any> = {};
+        for (const [key, val] of Object.entries(node.params || {})) {
+          if (typeof val === 'string') {
+            inputs[key] = resolveTemplate(val, workflowState);
+          } else {
+            inputs[key] = val;
+          }
+        }
+
+        // 2. Fetch the deployed payload of the package workflow via Activity
+        const packagePayloadData = await activities.fetchPackagePayload({
+          workflowId: packageWorkflowId,
+        });
+
+        // 3. Construct the execution payload for the Child Workflow
+        const childPayload: WorkflowPayload = {
+          workflowId: packageWorkflowId,
+          steps: packagePayloadData.steps,
+          startAt: packagePayloadData.startAt,
+          initialState: inputs,
+          userId: payload.userId, // keep user context
+        };
+
+        // 4. Execute the package as a Child Workflow
+        const result = await executeChild(InterpreterWorkflow, {
+          args: [childPayload],
+        });
+
+        // 5. Store the output in the state
+        workflowState[node.id] = result?.output || result?.state;
+      } else if (node.type === 'trigger_start') {
         // Only wait if we don't have data yet (e.g. passed from parent)
         if (!webhookData && !payload.initialState) {
           console.log('[Interpreter] Waiting for webhook signal...');

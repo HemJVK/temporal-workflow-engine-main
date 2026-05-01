@@ -7,6 +7,7 @@ import { RunActivity } from './run.activity';
 import { EntityModule } from 'src/entity/entity.module';
 import { LangGraphActivity } from './ai/langgraph.activity';
 import { McpClientService } from './ai/mcp-client.service';
+import { LogicActivity } from './logic.activity';
 
 @Module({
   imports: [EntityModule],
@@ -18,6 +19,7 @@ import { McpClientService } from './ai/mcp-client.service';
     RunActivity,
     LangGraphActivity,
     McpClientService,
+    LogicActivity,
   ],
   exports: [
     DatabaseActivity,
@@ -27,6 +29,7 @@ import { McpClientService } from './ai/mcp-client.service';
     RunActivity,
     LangGraphActivity,
     McpClientService,
+    LogicActivity,
   ],
 })
 export class ActivitiesModule {}

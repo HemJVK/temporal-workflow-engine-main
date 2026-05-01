@@ -1,5 +1,3 @@
-import { TwilioVoiceResponseModel } from './twilio-voice-response.model';
-
 export interface SqlQueryArgs {
   query: string;
   params?: unknown[];
@@ -44,22 +42,19 @@ export interface AgentActivities {
       description: string;
       type: 'string' | 'number' | 'boolean';
     }[];
+    userId?: string;
+    userEmail?: string;
   }): Promise<any>;
   runResearchSubgraph(args: { topic: string }): Promise<{ summary: string }>;
+  runCustomLogic(args: {
+    script: string;
+    inputs: Record<string, any>;
+  }): Promise<any>;
+  fetchPackagePayload(args: { workflowId: string }): Promise<any>;
   updateRunStatus(args: {
     runId: string;
     status: 'COMPLETED' | 'FAILED';
     output?: any;
     error?: string;
   }): Promise<void>;
-  makeNotificationCall(args: {
-    to: string;
-    message: string;
-  }): Promise<TwilioVoiceResponseModel>;
-  makeConversationalCallTwilio(args: {
-    to: string;
-    systemPrompt: string;
-    callbackUrl: string; // Your NestJS URL
-    metadata: { workflowId: string; runId: string; nodeId: string };
-  }): Promise<TwilioVoiceResponseModel>;
 }

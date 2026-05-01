@@ -20,7 +20,9 @@ export type NodeType =
   | 'tool_agent'
   | 'tool_sentiment_analysis'
   | 'tool_generic_llm'
-  | 'agent_researcher';
+  | 'agent_researcher'
+  | 'logic_custom_block'
+  | string;
 
 export type NodeStatus =
   | 'idle'

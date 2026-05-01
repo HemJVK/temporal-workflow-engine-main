@@ -10,6 +10,7 @@ export interface McpServerConfig {
   command: string;
   args?: string[];
   env?: Record<string, string>;
+  userId?: string;
 }
 
 @Injectable()
@@ -34,6 +35,12 @@ export class McpClientService {
         env[key] = value;
       }
     }
+
+    // Always use a fixed Composio entity so the Gmail MCP tool sends from
+    // the account you connected in the Composio dashboard (hjvk.omni@gmail.com).
+    // Set COMPOSIO_DEFAULT_ENTITY_ID in .env if your entity is not "default".
+    env['COMPOSIO_ENTITY_ID'] =
+      process.env.COMPOSIO_DEFAULT_ENTITY_ID || 'default';
 
     const transportParams: StdioServerParameters = {
       command: config.command,

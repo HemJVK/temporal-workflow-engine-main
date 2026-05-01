@@ -8,7 +8,7 @@ export class DatabaseActivity {
   async executeSqlQuery(args: { query: string; params?: any[] }) {
     try {
       console.log(`[DB Activity] Executing: ${args.query}`);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       const rows = await this.dataSource.query(args.query, args.params);
 
       if (Array.isArray(rows)) {
@@ -27,7 +27,7 @@ export class DatabaseActivity {
       console.error('Error executing SQL query:', error);
       return {
         success: false,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+
         error: error.message,
       };
     }

@@ -13,7 +13,7 @@ import { ModelPricingEntity } from '../entity/model-pricing.entity';
       CreditAccountEntity,
       CreditLedgerEntity,
       ModelPricingEntity,
-    ])
+    ]),
   ],
   providers: [CreditService, CreditGuard, CreditCron],
   exports: [CreditService, CreditGuard],

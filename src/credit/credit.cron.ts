@@ -19,28 +19,32 @@ export class CreditCron {
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleDailyRefresh() {
     this.logger.debug('Starting Daily Credit Refresh for eligible accounts.');
-    
+
     // Example basic refresh logic: refresh "free" tier accounts back to 10.0 credits
-    const accounts = await this.creditAccountRep.find({ where: { tier: 'free' } });
-    
+    const accounts = await this.creditAccountRep.find({
+      where: { tier: 'free' },
+    });
+
     for (const account of accounts) {
       if (account.balance < 10) {
         const added = 10 - account.balance;
         account.balance = 10;
-        
+
         await this.creditAccountRep.save(account);
-        
+
         // Log refresh audit
         const ledger = this.creditLedgerRep.create({
           accountId: account.userId,
           amount: added,
           type: 'GRANT',
           description: 'Daily free-tier credit refresh',
-          referenceId: `CRON_REFRESH_${new Date().toISOString()}`
+          referenceId: `CRON_REFRESH_${new Date().toISOString()}`,
         });
-        
+
         await this.creditLedgerRep.save(ledger);
-        this.logger.debug(`Refreshed account ${account.userId} back to 10 credits.`);
+        this.logger.debug(
+          `Refreshed account ${account.userId} back to 10 credits.`,
+        );
       }
     }
   }

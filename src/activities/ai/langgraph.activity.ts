@@ -36,6 +36,8 @@ export class LangGraphActivity {
     maxRetries?: number;
     maxIterations?: number;
     outputFields?: any[];
+    userId?: string;
+    userEmail?: string;  // Preferred: used as COMPOSIO_ENTITY_ID for per-user Gmail sending
   }) {
     this.logger.log(`[LangGraph] Starting Agent Execution: ${args.modelName}`);
 
@@ -71,8 +73,16 @@ export class LangGraphActivity {
 
     // OpenRouter prefix detection — route through OpenRouter-compatible endpoint
     const openRouterPrefixes = [
-      'nvidia/', 'meta-llama/', 'mistralai/', 'openrouter/', 'deepseek/',
-      'qwen/', 'cohere/', 'perplexity/', 'x-ai/', 'microsoft/',
+      'nvidia/',
+      'meta-llama/',
+      'mistralai/',
+      'openrouter/',
+      'deepseek/',
+      'qwen/',
+      'cohere/',
+      'perplexity/',
+      'x-ai/',
+      'microsoft/',
     ];
     const isOpenRouterModel =
       openRouterPrefixes.some((p) => modelName.startsWith(p)) ||
@@ -140,10 +150,12 @@ export class LangGraphActivity {
           let serverConfig: McpServerConfig;
 
           if (typeof serverInput === 'string') {
-            this.logger.log(`[LangGraph] Looking up MCP Server by ID: ${serverInput}`);
+            this.logger.log(
+              `[LangGraph] Looking up MCP Server by ID: ${serverInput}`,
+            );
             const queryResult = await this.db.executeSqlQuery({
               query: `SELECT id, name, "transportType", config FROM mcp_servers WHERE id = $1`,
-              params: [serverInput]
+              params: [serverInput],
             });
 
             if (Array.isArray(queryResult) && queryResult.length > 0) {
@@ -153,14 +165,22 @@ export class LangGraphActivity {
                 command: row.config.command,
                 args: row.config.args || [],
                 env: row.config.env || {},
+                // Prefer email over UUID: Composio entity ID should match the
+                // account the user connected in the Composio dashboard.
+                userId: args.userEmail || args.userId,
               };
             } else {
-              this.logger.warn(`[LangGraph] MCP Server ID ${serverInput} not found in DB.`);
+              this.logger.warn(
+                `[LangGraph] MCP Server ID ${serverInput} not found in DB.`,
+              );
               continue;
             }
           } else {
             // It's already an object (used by other tests/legacy)
-            serverConfig = serverInput as McpServerConfig;
+            serverConfig = {
+              ...(serverInput as McpServerConfig),
+              userId: args.userEmail || args.userId,
+            };
           }
 
           const client = await this.mcpService.getClient(serverConfig);

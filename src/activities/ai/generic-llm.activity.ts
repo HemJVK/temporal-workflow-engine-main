@@ -74,8 +74,16 @@ export class GenericLlmActivity {
 
     // OpenRouter prefix detection — route through OpenRouter-compatible endpoint
     const openRouterPrefixes = [
-      'nvidia/', 'meta-llama/', 'mistralai/', 'openrouter/', 'deepseek/',
-      'qwen/', 'cohere/', 'perplexity/', 'x-ai/', 'microsoft/',
+      'nvidia/',
+      'meta-llama/',
+      'mistralai/',
+      'openrouter/',
+      'deepseek/',
+      'qwen/',
+      'cohere/',
+      'perplexity/',
+      'x-ai/',
+      'microsoft/',
     ];
     const isOpenRouterModel =
       openRouterPrefixes.some((p) => modelName.startsWith(p)) ||

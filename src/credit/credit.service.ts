@@ -15,17 +15,20 @@ export class CreditService {
     private readonly modelPricingRep: Repository<ModelPricingEntity>,
   ) {}
 
-  async checkPreflightBalance(userId: string, minimumRequired: number): Promise<boolean> {
+  async checkPreflightBalance(
+    userId: string,
+    minimumRequired: number,
+  ): Promise<boolean> {
     // Credit system disabled for now.
     return true;
   }
 
   async deductCreditsAtomic(
-    userId: string, 
-    promptTokens: number, 
-    completionTokens: number, 
-    modelId: string, 
-    referenceId?: string
+    userId: string,
+    promptTokens: number,
+    completionTokens: number,
+    modelId: string,
+    referenceId?: string,
   ): Promise<{ success: boolean; newBalance: number }> {
     // Credit system disabled for now.
     return { success: true, newBalance: 0 };

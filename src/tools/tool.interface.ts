@@ -7,5 +7,6 @@ export interface IWorkflowTool {
     node: WorkflowStep,
     state: WorkflowState,
     activities: AgentActivities,
+    payload?: any,
   ): Promise<any>;
 }
