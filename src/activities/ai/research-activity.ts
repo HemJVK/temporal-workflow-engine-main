@@ -37,12 +37,34 @@ export class LangGraphResearchActivity {
     this.tools = [new TavilySearch({ maxResults: 2 })];
   }
 
-  async runResearchSubgraph(args: { topic: string }) {
-    console.log(`[LangGraph] Starting Research on: ${args.topic}`);
+  async runResearchSubgraph(args: { topic: string; modelName?: string }) {
+    console.log(`[LangGraph] Starting Research on: ${args.topic} using model: ${args.modelName}`);
+
+    const modelName = args.modelName || 'google/gemini-2.0-flash-lite-preview-02-05:free';
+    
+    // Determine provider
+    const isGroq = modelName.includes('gpt-oss-20b') || modelName.includes('llama3-70b');
+    const apiKey = isGroq 
+      ? this.configService.get('GROQ_API_KEY') 
+      : this.configService.get('OPENROUTER_API_KEY');
+
+    const model = new ChatOpenAI({
+      model: modelName,
+      apiKey: apiKey?.split(',')[0].trim(), // Take first key if comma-separated
+      maxTokens: 1024,
+      configuration: {
+        baseURL: isGroq ? undefined : 'https://openrouter.ai/api/v1',
+        defaultHeaders: isGroq ? undefined : {
+          'HTTP-Referer': 'http://localhost:5173',
+          'X-Title': 'Agent Flow',
+        },
+      },
+      temperature: 0,
+    });
 
     // --- NODE 1: THE AGENT (Decides what to do) ---
     const agentNode = async (state: typeof AgentState.State) => {
-      const modelWithTools = this.model.bindTools(this.tools);
+      const modelWithTools = model.bindTools(this.tools);
       const response = await modelWithTools.invoke(state.messages);
       return { messages: [response] };
     };

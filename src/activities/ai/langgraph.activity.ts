@@ -37,9 +37,9 @@ export class LangGraphActivity {
     maxIterations?: number;
     outputFields?: any[];
     userId?: string;
-    userEmail?: string;  // Preferred: used as COMPOSIO_ENTITY_ID for per-user Gmail sending
+    config?: any;
+    query?: string;
   }) {
-    this.logger.log(`[LangGraph] Starting Agent Execution: ${args.modelName}`);
 
     const googleModels = [
       'gemini-3-flash-preview',
@@ -66,8 +66,7 @@ export class LangGraphActivity {
       'nvidia/nemotron-nano-12b-v2-vl:free',
     ];
 
-    // Best free OpenRouter model for Agents: natively supports tools & JSON structure
-    const DEFAULT_MODEL = 'google/gemini-2.0-flash-lite-preview-02-05:free';
+    const DEFAULT_MODEL = 'gpt-4o';
     const modelName = args.modelName || DEFAULT_MODEL;
     let llm: any;
 
@@ -93,7 +92,7 @@ export class LangGraphActivity {
     if (isOpenRouterModel) {
       llm = new ChatOpenAI({
         model: modelName,
-        apiKey: this.configService.get('OPENROUTER_API_KEY'),
+        apiKey: this.configService.get<string>('OPENROUTER_API_KEY')?.split(',')[0].trim(),
         maxTokens: 1024, // cap to avoid 402 on free-tier models
         configuration: {
           baseURL: 'https://openrouter.ai/api/v1',
@@ -107,34 +106,26 @@ export class LangGraphActivity {
     } else if (googleModels.some((m) => modelName.includes(m))) {
       llm = new ChatGoogleGenerativeAI({
         model: modelName,
-        apiKey: this.configService.get('GOOGLE_GEMINI_API_KEY'),
+        apiKey: this.configService.get<string>('GOOGLE_GEMINI_API_KEY')?.split(',')[0].trim(),
         temperature: 0,
       });
     } else if (anthropicModels.some((m) => modelName.includes(m))) {
       llm = new ChatAnthropic({
         model: modelName,
-        apiKey: this.configService.get('ANTHROPIC_API_KEY'),
+        apiKey: this.configService.get<string>('ANTHROPIC_API_KEY')?.split(',')[0].trim(),
         temperature: 0,
       });
     } else if (groqModels.some((m) => modelName.includes(m))) {
       llm = new ChatGroq({
         model: modelName,
-        apiKey: this.configService.get('GROQ_API_KEY'),
+        apiKey: this.configService.get<string>('GROQ_API_KEY')?.split(',')[0].trim(),
         temperature: 0,
       });
     } else {
-      // Default fallback: route through OpenRouter (supports GPT-4o, GPT-4-turbo, etc.)
+      // Default fallback: use OpenAI directly for reliable tool-calling
       llm = new ChatOpenAI({
         model: modelName,
-        apiKey: this.configService.get('OPENROUTER_API_KEY'),
-        maxTokens: 1024, // cap to avoid 402 on free-tier models
-        configuration: {
-          baseURL: 'https://openrouter.ai/api/v1',
-          defaultHeaders: {
-            'HTTP-Referer': 'http://localhost:5173',
-            'X-Title': 'Agent Flow',
-          },
-        },
+        apiKey: this.configService.get<string>('OPENAI_API_KEY')?.split(',')[0].trim(),
         temperature: 0,
       });
     }
@@ -165,9 +156,6 @@ export class LangGraphActivity {
                 command: row.config.command,
                 args: row.config.args || [],
                 env: row.config.env || {},
-                // Prefer email over UUID: Composio entity ID should match the
-                // account the user connected in the Composio dashboard.
-                userId: args.userEmail || args.userId,
               };
             } else {
               this.logger.warn(
@@ -179,7 +167,6 @@ export class LangGraphActivity {
             // It's already an object (used by other tests/legacy)
             serverConfig = {
               ...(serverInput as McpServerConfig),
-              userId: args.userEmail || args.userId,
             };
           }
 
@@ -196,7 +183,7 @@ export class LangGraphActivity {
               description:
                 mcpTool.description ||
                 `Tool ${mcpTool.name} from ${serverConfig.id}`,
-              schema: z.any().describe(JSON.stringify(mcpTool.inputSchema)),
+              schema: this.jsonSchemaToZod(mcpTool.inputSchema) as any,
               func: async (inputArgs: any) => {
                 this.logger.log(
                   `Calling MCP tool ${mcpTool.name} with ${JSON.stringify(inputArgs)}`,
@@ -217,17 +204,22 @@ export class LangGraphActivity {
     }
 
     // 3. Define the LangGraph Agent
+    const systemPrompt = args.systemPrompt || args.config?.systemPrompt || args.config?.system_prompt || '';
+    const userPrompt = args.userPrompt || args.query || args.config?.userPrompt || args.config?.prompt || args.config?.query || '';
+
+    if (!systemPrompt && !userPrompt) {
+      throw new Error('Either systemPrompt or userPrompt must be provided in the node configuration.');
+    }
+
     const agent = createReactAgent({
       llm,
       tools: lcTools,
-      messageModifier: new SystemMessage(
-        args.systemPrompt || 'You are a helpful assistant.',
-      ),
+      messageModifier: new SystemMessage(systemPrompt || 'You are a helpful assistant.'),
     });
 
     // 4. Run the graph
     const inputs = {
-      messages: [new HumanMessage(args.userPrompt)],
+      messages: [new HumanMessage(userPrompt)],
     };
 
     const result = await agent.invoke(inputs, {
@@ -240,14 +232,78 @@ export class LangGraphActivity {
   }
 
   private handleOutputParsing(text: string | any, outputFields?: any[]) {
-    const textStr = typeof text === 'string' ? text : JSON.stringify(text);
-    if (!outputFields || outputFields.length === 0) {
-      return { text: textStr };
+    let textStr = typeof text === 'string' ? text : JSON.stringify(text);
+
+    // --- NEW: Strip Markdown Code Blocks ---
+    // AI models often wrap JSON in ```json ... ``` or ``` ... ```
+    if (textStr.includes('```')) {
+      const match = textStr.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
+      if (match && match[1]) {
+        textStr = match[1].trim();
+      }
     }
+
+    if (!outputFields || outputFields.length === 0) {
+      // Even without outputFields, try to return a parsed object if it looks like JSON
+      try {
+        return JSON.parse(textStr);
+      } catch {
+        return { text: textStr };
+      }
+    }
+
     try {
       return JSON.parse(textStr);
     } catch {
       return { text: textStr };
     }
+  }
+
+  private jsonSchemaToZod(schema: any): z.ZodTypeAny {
+    if (!schema) return z.any();
+    const type = schema.type;
+
+    if (type === 'string') {
+      let s: any = z.string();
+      if (schema.enum && Array.isArray(schema.enum) && schema.enum.length > 0) {
+        // Zod requires at least one element for enum
+        s = z.enum(schema.enum as [string, ...string[]]);
+      }
+      if (schema.description) s = s.describe(schema.description);
+      return s;
+    }
+    if (type === 'number' || type === 'integer') {
+      let n = z.number();
+      if (schema.description) n = n.describe(schema.description);
+      return n;
+    }
+    if (type === 'boolean') {
+      let b = z.boolean();
+      if (schema.description) b = b.describe(schema.description);
+      return b;
+    }
+    if (type === 'array') {
+      let a = z.array(this.jsonSchemaToZod(schema.items));
+      if (schema.description) a = a.describe(schema.description);
+      return a;
+    }
+    if (type === 'object') {
+      if (schema.properties) {
+        const shape: Record<string, z.ZodTypeAny> = {};
+        for (const [key, value] of Object.entries<any>(schema.properties)) {
+          let fieldSchema = this.jsonSchemaToZod(value);
+          if (!schema.required?.includes(key)) {
+            fieldSchema = fieldSchema.optional();
+          }
+          shape[key] = fieldSchema;
+        }
+        let o = z.object(shape);
+        if (schema.description) o = o.describe(schema.description);
+        return o;
+      }
+      return z.record(z.any());
+    }
+
+    return z.any();
   }
 }

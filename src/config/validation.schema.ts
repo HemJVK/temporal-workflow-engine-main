@@ -8,6 +8,7 @@ export const validationSchema = Joi.object({
     .default('development'),
 
   // Temporal
+  TEMPORAL_ADDRESS: Joi.string().default('localhost:7233'),
   TEMPORAL_TASK_QUEUE: Joi.string().required(), // Mandatory!
 
   // Database (Fail if these are missing)

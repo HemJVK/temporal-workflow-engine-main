@@ -4,7 +4,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 
-import { Worker } from '@temporalio/worker';
+import { Worker, NativeConnection } from '@temporalio/worker';
 
 import { DatabaseActivity } from '../activities/database.activity';
 import { ConfigService } from '@nestjs/config';
@@ -82,6 +82,9 @@ export class WorkerService implements OnModuleInit, OnApplicationShutdown {
       workflowsPath: workflowsPath,
       taskQueue: taskQueue!,
       activities: activities,
+      connection: await NativeConnection.connect({
+        address: this.configService.get<string>('temporal.address'),
+      }),
       maxConcurrentActivityTaskExecutions: 50,
       maxConcurrentWorkflowTaskExecutions: 50,
     });

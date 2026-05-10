@@ -43,9 +43,8 @@ export interface AgentActivities {
       type: 'string' | 'number' | 'boolean';
     }[];
     userId?: string;
-    userEmail?: string;
   }): Promise<any>;
-  runResearchSubgraph(args: { topic: string }): Promise<{ summary: string }>;
+  runResearchSubgraph(args: { topic: string; modelName?: string }): Promise<{ summary: string }>;
   runCustomLogic(args: {
     script: string;
     inputs: Record<string, any>;

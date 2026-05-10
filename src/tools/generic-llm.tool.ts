@@ -31,7 +31,7 @@ export class GenericLlmTool implements IWorkflowTool {
     const result = await activities.runAgent({
       systemPrompt: systemPrompt || 'You are a helpful assistant.',
       userPrompt: userPrompt || '',
-      modelName: (node.params.model as string) || 'gpt-4o',
+      modelName: (node.params.manualModel as string) || (node.params.model as string) || 'gpt-4o',
       outputFields: node.params.outputFields as
         | {
             name: string;
@@ -42,7 +42,6 @@ export class GenericLlmTool implements IWorkflowTool {
       boundTools: node.params.boundTools as string[],
       mcpServers: node.params.mcpServers as string[],
       userId: payload?.userId,
-      userEmail: payload?.userEmail,  // Used as COMPOSIO_ENTITY_ID for per-user Gmail
     });
 
     return result as unknown;

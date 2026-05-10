@@ -67,8 +67,8 @@ export class GenericLlmActivity {
       'nvidia/nemotron-nano-12b-v2-vl:free',
     ];
 
-    // Best free OpenRouter model for Agents: natively supports tools & JSON structure
-    const DEFAULT_MODEL = 'google/gemini-2.0-flash-lite-preview-02-05:free';
+    // Default to gpt-4o for reliable tool-calling support
+    const DEFAULT_MODEL = 'gpt-4o';
     const modelName = args.modelName || DEFAULT_MODEL;
     let llm: BaseChatModel;
 
@@ -128,21 +128,13 @@ export class GenericLlmActivity {
         maxRetries: args.maxRetries ?? 3,
       });
     } else {
-      // Default fallback: route through OpenRouter (supports GPT-4o, GPT-4-turbo, etc.)
+      // Default fallback: use OpenAI directly for reliable tool-calling
       llm = new ChatOpenAI({
         model: modelName,
-        apiKey: this.configService.get('OPENROUTER_API_KEY'),
-        maxTokens: 1024, // cap to avoid 402 on free-tier models
-        configuration: {
-          baseURL: 'https://openrouter.ai/api/v1',
-          defaultHeaders: {
-            'HTTP-Referer': 'http://localhost:5173',
-            'X-Title': 'Agent Flow',
-          },
-        },
+        apiKey: this.configService.get('OPENAI_API_KEY'),
         temperature: 1,
         maxRetries: args.maxRetries ?? 3,
-      }) as unknown as BaseChatModel;
+      });
     }
 
     // 2. CASE A: STRUCTURED OUTPUT (JSON)

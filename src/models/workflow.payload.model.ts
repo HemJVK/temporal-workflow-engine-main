@@ -6,6 +6,5 @@ export interface WorkflowPayload {
   startAt: string;
   steps: Record<string, WorkflowStep>;
   userId?: string;
-  userEmail?: string;  // Used as COMPOSIO_ENTITY_ID so emails send from the user's own Gmail
   initialState?: WorkflowState;
 }

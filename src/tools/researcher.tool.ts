@@ -18,7 +18,10 @@ export class ResearcherTool implements IWorkflowTool {
     if (!topic) throw new Error('Research topic is missing');
 
     // 2. Call the Activity (which runs the LangGraph)
-    const result = await activities.runResearchSubgraph({ topic });
+    const result = await activities.runResearchSubgraph({ 
+      topic,
+      modelName: (node.params.manualModel as string) || (node.params.model as string)
+    });
 
     return result as unknown;
   }

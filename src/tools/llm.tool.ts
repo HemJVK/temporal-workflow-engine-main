@@ -37,16 +37,13 @@ export class LLMTool implements IWorkflowTool {
       }
     }
 
-    return await activities.makeHttpRequest({
-      method: String(params.method) as
-        | 'POST'
-        | 'PUT'
-        | 'PATCH'
-        | 'GET'
-        | 'DELETE',
-      url: String(params.url),
-      headers,
-      body: parsedBody,
+    return await activities.runAgent({
+      systemPrompt: (params.systemPrompt as string) || 'You are a helpful assistant.',
+      userPrompt: (params.userPrompt as string) || '',
+      modelName: (params.model as string) || 'gpt-4o',
+      outputFields: params.outputFields as any,
+      boundTools: params.bindTools as string[],
+      mcpServers: params.mcpServers as string[],
     });
   }
 }

@@ -11,6 +11,8 @@ const registry: Partial<Record<NodeType, IWorkflowTool>> = {
   make_http_call: new HttpTool(),
   tool_sentiment_analysis: new SentimentAnalysisTool(),
   tool_generic_llm: new GenericLlmTool(),
+  ai_agent: new GenericLlmTool(),
+  tool_agent: new GenericLlmTool(),
   agent_researcher: new ResearcherTool(),
 };
 
